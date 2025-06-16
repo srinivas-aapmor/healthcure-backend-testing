@@ -1,25 +1,21 @@
 const mongoose = require("mongoose");
 
 const doctorSchema = new mongoose.Schema({
-  fullName: String,
+  name: String, // changed from fullName
   email: { type: String, unique: true },
   password: String,
   specialization: String,
   phone: String,
   experience: Number,
-  consultationFee: Number,
+  fee: Number, // changed from consultationFee
   degrees: String,
-  clinicAddress: String,
-  availableFrom: String,
-  availableTo: String,
+  address: String, // changed from clinicAddress
+  from: String, // changed from availableFrom
+  to: String, // changed from availableTo
   bio: String,
-});
-
-
-doctorSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+  role: { type: String, default: "doctor" }, // add role field
+  availability: [{ type: String }], // add availability as array of date strings
+  timeSlots: [{ type: String }], // add timeSlots as array of time strings (e.g., '09:00-09:30')
 });
 
 module.exports = mongoose.model("doctor", doctorSchema);

@@ -1,46 +1,81 @@
-
 const Doctor = require("../models/doctor");
 const User = require('../models/user.js')
+const bcrypt = require("bcryptjs");
 
 const createOrUpdateProfile = async (req, res) => {
   console.log("Incoming request body:", req.body);
   const {
-      fullName,
-      email,
-      password,
-      phone,
-      specialty,
-      experience,
-      fee,
-      degrees,
-      location,
-      availableFrom,
-      availableTo,
-      bio,
-      imageUrl, // optional
-    } = req.body;
-  let profile = await Doctor.findOne({ user: req.user._id });
+    name,
+    email,
+    password,
+    phone,
+    specialization,
+    experience,
+    fee,
+    degrees,
+    address,
+    from,
+    to,
+    bio,
+    image // image is optional
+  } = req.body;
+
+  // Find doctor by email (from token or body)
+  let profile = await Doctor.findOne({ email });
   if (profile) {
-     //if profile exists it update the profile
-    Object.assign(profile, {  fullName,
+    // Only update password if a new one is provided
+    if (password && password.trim() !== "") {
+      profile.password = await bcrypt.hash(password, 10);
+    }
+    // Only update image if provided
+    if (image && image.trim() !== "") {
+      profile.image = image;
+    }
+    // Update other fields if provided and not empty
+    Object.entries({ name, phone, specialization, experience, fee, degrees, address, from, to, bio }).forEach(([key, value]) => {
+      if (value && value.toString().trim() !== "") {
+        profile[key] = value;
+      }
+    })
+  } else {
+    // Create new profile
+    let hashedPassword = password && password.trim() !== "" ? await bcrypt.hash(password, 10) : undefined;
+    profile = new Doctor({
+      name,
       email,
-      password,
+      password: hashedPassword,
       phone,
-      specialty,
+      specialization,
       experience,
       fee,
       degrees,
-      location,
-      availableFrom,
-      availableTo,
+      address,
+      from,
+      to,
       bio,
-      imageUrl, });
-  } else {
-     //it creates profile and assign the details  
-    profile = new Doctor({ user: req.user._id,email,password,phone, specialty, experience, fee,degrees,location, availableFrom,availableTo,bio,imageUrl });
+      image: image && image.trim() !== "" ? image : undefined
+    });
   }
   await profile.save();
-  res.json(profile);
+  // Format doctor fields in preferred order before sending response
+  const formattedDoctor = {
+    _id: profile._id,
+    name: profile.name,
+    email: profile.email,
+    password: profile.password,
+    phone: profile.phone,
+    specialization: profile.specialization,
+    experience: profile.experience,
+    fee: profile.fee,
+    degrees: profile.degrees,
+    address: profile.address,
+    from: profile.from,
+    to: profile.to,
+    bio: profile.bio,
+    role: profile.role,
+    image: profile.image
+  };
+  res.json(formattedDoctor);
 };
 
 //to find all doctors details
@@ -55,8 +90,33 @@ const getAllDoctors = async (req, res) => {
   res.json(doctor);
 };
 
+// Update doctor availability and time slots
+const updateAvailability = async (req, res) => {
+  try {
+    const doctorId = req.user.id; // assuming auth middleware sets req.user
+    const { dates, timeSlots } = req.body;
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ error: 'Doctor not found' });
+    }
+    // Only update dates if provided and is an array
+    if (Array.isArray(dates)) {
+      doctor.availability = dates;
+    }
+    // Only update timeSlots if provided and is an array
+    if (Array.isArray(timeSlots)) {
+      doctor.timeSlots = timeSlots.filter(slot => typeof slot === 'string' && slot.trim() !== '');
+    }
+    await doctor.save();
+    res.json({ success: true, availability: doctor.availability, timeSlots: doctor.timeSlots });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 module.exports={
     createOrUpdateProfile,
     getAllDoctors,
-    getDoctorById
+    getDoctorById,
+    updateAvailability
 }

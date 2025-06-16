@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
+const Doctor = require('../models/doctor')
 
 const verifyToken = async (req, res, next) => {
   try {
@@ -12,7 +13,12 @@ const verifyToken = async (req, res, next) => {
     const token = authHeader.split(" ")[1]; 
     const decoded = jwt.verify(token, process.env.JWT_SECRET); 
 
-    const user = await User.findById(decoded.id).select("-password");
+    // Try to find user in User collection
+    let user = await User.findById(decoded.id).select("-password");
+    // If not found, try Doctor collection
+    if (!user) {
+      user = await Doctor.findById(decoded.id).select("-password");
+    }
     if (!user) return res.status(401).json({ message: "User not found" });
 
     req.user = user;

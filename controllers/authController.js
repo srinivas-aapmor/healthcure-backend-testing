@@ -7,42 +7,66 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // 1. Check Doctor collection
-    let user = await Doctor.findOne({ email });
-    let role = "doctor";
-    console.log(user);
-
-    if (!user) {
-      // 2. Check Patient collection
-      user = await Patient.findOne({ email });
-      role = "patient";
+    let doctor = await Doctor.findOne({ email });
+    console.log('Fetched doctor object:', doctor);
+    if (!doctor) {
+      console.log('Doctor not found for email:', email);
+      return res.status(404).json({ message: "Doctor not found" });
     }
+    console.log('doctor["name"]:', doctor["name"]);
+    console.log('doctor["password"] (hash):', doctor["password"]);
+    console.log('Password entered:', password);
 
-    if (!user) {
-      return res.status(401).json({ message: "Invalid email " });
-    }
-
-    // 3. Compare password
-    console.log(user.password)
-    const isMatch = (password=== user.password);
+    // Use bcrypt to compare hashed password
+    const isMatch = await bcrypt.compare(password, doctor.password);
+    console.log('bcrypt.compare result:', isMatch);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid  password" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // 4. Generate token
-    const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-    // console.log(user)
-    res.status(200).json({
+    const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    const isProfileComplete =
+      doctor["name"] &&
+      doctor["specialization"] &&
+      doctor["experience"] &&
+      doctor["phone"] &&
+      doctor["address"] &&
+      doctor["fee"] &&
+      doctor["bio"];
+    console.log('isProfileComplete:', isProfileComplete);
+    console.log('doctor["name"]:', doctor["name"]);
+    res.json({
       token,
-      user,
-      role,
+      role: "doctor",
+      isProfileComplete: Boolean(isProfileComplete),
     });
+    console.log('isProfileComplete:', isProfileComplete)
+
   } catch (error) {
-    console.error("Login error:", error);
+    console.error('Login error:', error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-module.exports = { login };
+const register = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    let existingDoctor = await Doctor.findOne({ email });
+    if (existingDoctor) {
+      return res.status(400).json({ message: "Doctor already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newDoctor = new Doctor({ email, password: hashedPassword });
+    await newDoctor.save();
+
+    res.status(201).json({ message: "Doctor registered successfully" });
+  } catch (error) {
+    console.error('Registration error:', error); // log the error for debugging
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = { login, register };

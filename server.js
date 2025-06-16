@@ -12,7 +12,7 @@ const app= express();
 
  //routes
  app.use("/api/auth",require('./routes/authRoutes'));
- app.use("/api/doctors",require('./routes/doctorRoutes'));
+ app.use("/api/doctor",require('./routes/doctorRoutes'));
  app.use("/api/appointments",require('./routes/appointmentRoutes'));
  
 

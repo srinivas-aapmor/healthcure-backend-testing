@@ -1,5 +1,5 @@
 const express = require("express");
-const { createOrUpdateProfile, getAllDoctors, getDoctorById } = require("../controllers/doctorController");
+const { createOrUpdateProfile, getAllDoctors, getDoctorById, updateAvailability } = require("../controllers/doctorController");
 const {login}= require ("../controllers/authController")
 
 const verifyToken = require("../middleware/authmiddleware");  
@@ -11,5 +11,6 @@ router.post("/login", login);
 router.post("/profile", verifyToken, roleCheck(["doctor"]), createOrUpdateProfile);
 router.get("/", verifyToken, getAllDoctors);
 router.get("/:id", verifyToken, getDoctorById);
+router.put("/availability", verifyToken, roleCheck(["doctor"]), updateAvailability);
 
 module.exports = router;
