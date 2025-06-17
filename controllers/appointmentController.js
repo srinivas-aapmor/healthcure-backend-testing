@@ -1,28 +1,10 @@
 const Appointment = require("../models/appointment");
 
-// Create a new appointment
-// const createAppointment = async (req, res) => {
-//   try {
-//     const { userId, doctorId, appointmentDate, status, notes } = req.body;
 
-//     const newAppointment = new Appointment({
-//        userId,
-//       doctorId,
-//       appointmentDate,
-//        status,
-//        notes
-//     });
-
-//     const savedAppointment = await newAppointment.save();
-//     res.status(201).json(savedAppointment);
-//   } catch (error) {
-//     console.error("Error creating appointment:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 
 const createAppointment = async (req, res) => {
   try {
+    console.log("Incoming payload:", req.body);
     const { userId, doctorId, scheduledAt, consultationType, notes } = req.body;
 
     const newAppointment = new Appointment({
