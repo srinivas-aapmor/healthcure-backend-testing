@@ -1,4 +1,5 @@
 const Doctor = require("../models/doctor");
+
 const User = require('../models/user.js')
 const bcrypt = require("bcryptjs");
 

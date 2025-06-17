@@ -1,4 +1,5 @@
 const express = require("express");
+
 const { createOrUpdateProfile, getAllDoctors, getDoctorById, updateAvailability } = require("../controllers/doctorController");
 const {login}= require ("../controllers/authController")
 
@@ -12,5 +13,6 @@ router.post("/profile", verifyToken, roleCheck(["doctor"]), createOrUpdateProfil
 router.get("/", verifyToken, getAllDoctors);
 router.get("/:id", verifyToken, getDoctorById);
 router.put("/availability", verifyToken, roleCheck(["doctor"]), updateAvailability);
+
 
 module.exports = router;

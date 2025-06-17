@@ -1,16 +1,23 @@
 const express = require("express");
-const { bookAppointment, getMyAppointments, updateStatus } = require("../controllers/appointmentsController");
-const verifyToken = require ('../middleware/authmiddleware');
-const { getDoctorAppointmentsById } = require('../controllers/appointmentsController');
+
+
+
 
 
 const router = express.Router();
+const { createAppointment } = require("../controllers/appointmentController");
+const { getAllAppointments } = require("../controllers/appointmentController");
+const { getAppointmentById } = require("../controllers/appointmentController");
+const { getAppointmentsByUserId } = require("../controllers/appointmentController");
+const { getAppointmentsByDoctorId } = require("../controllers/appointmentController");
+const { updateAppointmentStatus } = require("../controllers/appointmentController");
 
-router.post("/book", verifyToken, bookAppointment);
-router.get("/",verifyToken, getMyAppointments);
-router.put("/:id/status", verifyToken, updateStatus);
-router.get("/doctor/:doctorId", getDoctorAppointmentsById);
 
-
+router.post("/book", createAppointment);
+router.get("/", getAllAppointments);
+router.get("/:id", getAppointmentById);
+router.get("/user/:userId", getAppointmentsByUserId);
+router.get("/doctor/:doctorId", getAppointmentsByDoctorId);
+router.patch("/status/:appointmentId", updateAppointmentStatus);
 
 module.exports = router;
