@@ -40,6 +40,8 @@ const login = async (req, res) => {
       token,
       role: "doctor",
       isProfileComplete: Boolean(isProfileComplete),
+      name: doctor.name || "Doctor",
+      doctorId: doctor._id 
     });
     console.log('isProfileComplete:', isProfileComplete)
 
@@ -64,7 +66,7 @@ const register = async (req, res) => {
 
     res.status(201).json({ message: "Doctor registered successfully" });
   } catch (error) {
-    console.error('Registration error:', error); // log the error for debugging
+    console.error('Registration error:', error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

@@ -17,16 +17,13 @@ console.log(email, password);
   }
   try {
     const user = await User.findOne({ email });
-    // const users = await User.find();
-
-    // console.log("User found:", users);
 
     if (!user) {
       return res.status(401).json({ message: "user not found" });
     }
 
-    // const isPasswordMatch = await bcrypt.compare(password, user.password);
-    const isPasswordMatch = password === user.password;
+    // Use bcrypt to compare hashed password
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -63,7 +60,7 @@ const getAllUsers = async (req, res) => {
 // Get user by ID
 const getUserById = async (req, res) => {
   const { id } = req.params;
-
+  console.log(id,"ID");
   try {
     const user = await User.findById(id).select("-password"); // exclude password
     if (!user) {
@@ -76,13 +73,38 @@ const getUserById = async (req, res) => {
   }
 };
 
-
-
-
+const registerUser = async (req, res) => {
+  const { name, email, password, phone } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: "Please provide name, email, and password" });
+  }
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+    const user = new User({ name, email, password, phone, role: "patient" });
+    await user.save();
+    const token = generateToken(user._id);
+    res.status(201).json({
+      message: "Registration successful",
+      user: {
+        id: user.id || user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 module.exports = {
   loginUser,
   getAllUsers,
   getUserById,
-  
+  registerUser,
 };

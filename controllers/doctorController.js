@@ -21,10 +21,10 @@ const createOrUpdateProfile = async (req, res) => {
     image // image is optional
   } = req.body;
 
-  // Find doctor by email (from token or body)
+  // To find doctor by email 
   let profile = await Doctor.findOne({ email });
   if (profile) {
-    // Only update password if a new one is provided
+    //To update password 
     if (password && password.trim() !== "") {
       profile.password = await bcrypt.hash(password, 10);
     }
@@ -81,30 +81,30 @@ const createOrUpdateProfile = async (req, res) => {
 
 //to find all doctors details
 const getAllDoctors = async (req, res) => {
-  const doctors = await Doctor.find().populate("user", "name email");
+  const doctors = await Doctor.find().sort({ name: 1 });
   res.json(doctors);
 };
 
 //to find single doctor
  const getDoctorById = async (req, res) => {
-  const doctor = await Doctor.findById(req.params.id).populate("user", "name email");
+  const doctor = await Doctor.findById(req.params.id);
   res.json(doctor);
 };
 
 // Update doctor availability and time slots
 const updateAvailability = async (req, res) => {
   try {
-    const doctorId = req.user.id; // assuming auth middleware sets req.user
+    const doctorId = req.user.id; 
     const { dates, timeSlots } = req.body;
     const doctor = await Doctor.findById(doctorId);
     if (!doctor) {
       return res.status(404).json({ error: 'Doctor not found' });
     }
-    // Only update dates if provided and is an array
+    //to update date
     if (Array.isArray(dates)) {
       doctor.availability = dates;
     }
-    // Only update timeSlots if provided and is an array
+    // to update timeSlots 
     if (Array.isArray(timeSlots)) {
       doctor.timeSlots = timeSlots.filter(slot => typeof slot === 'string' && slot.trim() !== '');
     }
