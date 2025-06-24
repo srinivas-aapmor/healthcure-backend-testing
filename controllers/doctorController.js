@@ -21,6 +21,13 @@ const createOrUpdateProfile = async (req, res) => {
     image // image is optional
   } = req.body;
 
+    const imgData = req.file
+      ? {
+          data: req.file.buffer,
+          contentType: req.file.mimetype,
+        }
+      : undefined;
+
   // To find doctor by email 
   let profile = await Doctor.findOne({ email });
   if (profile) {
@@ -29,9 +36,13 @@ const createOrUpdateProfile = async (req, res) => {
       profile.password = await bcrypt.hash(password, 10);
     }
     // Only update image if provided
-    if (image && image.trim() !== "") {
-      profile.image = image;
-    }
+// if (image && image.trim() !== "") {
+//       profile.image = image;
+//     }    
+
+if (imgData) {
+        profile.img = imgData;
+      }
     // Update other fields if provided and not empty
     Object.entries({ name, phone, specialization, experience, fee, degrees, address, from, to, bio }).forEach(([key, value]) => {
       if (value && value.toString().trim() !== "") {
@@ -39,7 +50,7 @@ const createOrUpdateProfile = async (req, res) => {
       }
     })
   } else {
-    // Create new profile
+    // for new profile
     let hashedPassword = password && password.trim() !== "" ? await bcrypt.hash(password, 10) : undefined;
     profile = new Doctor({
       name,
@@ -54,11 +65,11 @@ const createOrUpdateProfile = async (req, res) => {
       from,
       to,
       bio,
-      image: image && image.trim() !== "" ? image : undefined
+      image: imgData
     });
   }
   await profile.save();
-  // Format doctor fields in preferred order before sending response
+  // to save in order
   const formattedDoctor = {
     _id: profile._id,
     name: profile.name,
@@ -82,8 +93,24 @@ const createOrUpdateProfile = async (req, res) => {
 //to find all doctors details
 const getAllDoctors = async (req, res) => {
   const doctors = await Doctor.find().sort({ name: 1 });
-  res.json(doctors);
+
+  const formattedDoctors = doctors.map(doc => ({
+    _id: doc._id,
+    name: doc.name,
+    email: doc.email,
+    specialization: doc.specialization,
+    experience: doc.experience,
+    fee: doc.fee,
+    bio: doc.bio,
+    phone: doc.phone,
+    image: doc.image?.data
+      ? `data:${doc.image.contentType};base64,${doc.image.data.toString('base64')}`
+      : null,
+  }));
+
+  res.json(formattedDoctors);
 };
+
 
 //to find single doctor
  const getDoctorById = async (req, res) => {
@@ -94,8 +121,10 @@ const getAllDoctors = async (req, res) => {
 // Update doctor availability and time slots
 const updateAvailability = async (req, res) => {
   try {
+    
     const doctorId = req.user.id; 
     const { dates, timeSlots } = req.body;
+    
     const doctor = await Doctor.findById(doctorId);
     if (!doctor) {
       return res.status(404).json({ error: 'Doctor not found' });
@@ -115,9 +144,27 @@ const updateAvailability = async (req, res) => {
   }
 };
 
+const getDoctorAvailability = async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.params.id);
+    if (!doctor) {
+      return res.status(404).json({ error: "Doctor not found" });
+    }
+
+    res.json({
+      availability: doctor.availability || [],
+      timeSlots: doctor.timeSlots || []
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
 module.exports={
     createOrUpdateProfile,
     getAllDoctors,
     getDoctorById,
-    updateAvailability
+    updateAvailability,
+    getDoctorAvailability
 }

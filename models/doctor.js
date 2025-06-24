@@ -16,6 +16,10 @@ const doctorSchema = new mongoose.Schema({
   role: { type: String, default: "doctor" }, 
   availability: [{ type: String }], 
   timeSlots: [{ type: String }],
+   img: {
+    data: Buffer,
+    contentType: String,
+  },
 });
 
 module.exports = mongoose.model("Doctor", doctorSchema);
