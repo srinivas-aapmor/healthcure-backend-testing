@@ -1,4 +1,4 @@
-// routes/imageRoutes.js
+
 const express = require("express");
 const Doctor = require('../models/doctor')
 

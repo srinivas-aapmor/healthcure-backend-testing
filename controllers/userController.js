@@ -11,7 +11,7 @@ const generateToken = (id) => {
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
-console.log(email, password);
+  console.log(email, password);
   if (!email || !password) {
     return res.status(400).json({ message: "Please provide email and password" });
   }
@@ -49,7 +49,7 @@ console.log(email, password);
 // Get all users
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password"); 
+    const users = await User.find().select("-password");
     res.status(200).json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -60,9 +60,9 @@ const getAllUsers = async (req, res) => {
 // Get user by ID
 const getUserById = async (req, res) => {
   const { id } = req.params;
-  console.log(id,"ID");
+  console.log(id, "ID");
   try {
-    const user = await User.findById(id).select("-password"); // exclude password
+    const user = await User.findById(id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

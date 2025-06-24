@@ -1,6 +1,6 @@
 const Appointment = require("../models/appointment");
 const mongoose = require("mongoose");
-const Doctor = require("../models/doctor"); // Register Doctor model for population
+const Doctor = require("../models/doctor");
 
 
 
@@ -160,7 +160,7 @@ const getTodaysAppointmentsByDoctorId = async (req, res) => {
       doctorId,
       scheduledAt: { $gte: start, $lte: end }
     })
-    .populate("userId", "name email");
+      .populate("userId", "name email");
 
     // Debug log for found appointments
     console.log('Appointments found:', appointments);

@@ -21,12 +21,12 @@ const createOrUpdateProfile = async (req, res) => {
     image // image is optional
   } = req.body;
 
-    const imgData = req.file
-      ? {
-          data: req.file.buffer,
-          contentType: req.file.mimetype,
-        }
-      : undefined;
+  const imgData = req.file
+    ? {
+      data: req.file.buffer,
+      contentType: req.file.mimetype,
+    }
+    : undefined;
 
   // To find doctor by email 
   let profile = await Doctor.findOne({ email });
@@ -35,14 +35,11 @@ const createOrUpdateProfile = async (req, res) => {
     if (password && password.trim() !== "") {
       profile.password = await bcrypt.hash(password, 10);
     }
-    // Only update image if provided
-// if (image && image.trim() !== "") {
-//       profile.image = image;
-//     }    
 
-if (imgData) {
-        profile.img = imgData;
-      }
+
+    if (imgData) {
+      profile.img = imgData;
+    }
     // Update other fields if provided and not empty
     Object.entries({ name, phone, specialization, experience, fee, degrees, address, from, to, bio }).forEach(([key, value]) => {
       if (value && value.toString().trim() !== "") {
@@ -113,7 +110,7 @@ const getAllDoctors = async (req, res) => {
 
 
 //to find single doctor
- const getDoctorById = async (req, res) => {
+const getDoctorById = async (req, res) => {
   const doctor = await Doctor.findById(req.params.id);
   res.json(doctor);
 };
@@ -121,10 +118,10 @@ const getAllDoctors = async (req, res) => {
 // Update doctor availability and time slots
 const updateAvailability = async (req, res) => {
   try {
-    
-    const doctorId = req.user.id; 
+
+    const doctorId = req.user.id;
     const { dates, timeSlots } = req.body;
-    
+
     const doctor = await Doctor.findById(doctorId);
     if (!doctor) {
       return res.status(404).json({ error: 'Doctor not found' });
@@ -161,10 +158,10 @@ const getDoctorAvailability = async (req, res) => {
 };
 
 
-module.exports={
-    createOrUpdateProfile,
-    getAllDoctors,
-    getDoctorById,
-    updateAvailability,
-    getDoctorAvailability
+module.exports = {
+  createOrUpdateProfile,
+  getAllDoctors,
+  getDoctorById,
+  updateAvailability,
+  getDoctorAvailability
 }

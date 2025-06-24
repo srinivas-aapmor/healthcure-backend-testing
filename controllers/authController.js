@@ -42,7 +42,7 @@ const login = async (req, res) => {
       role: "doctor",
       isProfileComplete: Boolean(isProfileComplete),
       name: doctor.name || "Doctor",
-      doctorId: doctor._id 
+      doctorId: doctor._id
     });
     console.log('isProfileComplete:', isProfileComplete)
 
