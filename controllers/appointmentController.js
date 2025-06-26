@@ -1,7 +1,9 @@
 const Appointment = require("../models/appointment");
 const mongoose = require("mongoose");
 const Doctor = require("../models/doctor");
-
+const { v4: uuidv4 } = require('uuid');
+const nodemailer = require("nodemailer");
+const User = require("../models/user");
 
 
 const createAppointment = async (req, res) => {
@@ -26,16 +28,58 @@ const createAppointment = async (req, res) => {
       return res.status(400).json({ message: "Invalid scheduledAt date" });
     }
 
+    // Generate room ID for online consultation
+    const consultationRoomId = consultationType === "Online" ? uuidv4() : null;
+
     const newAppointment = new Appointment({
       userId,
       doctorId,
       scheduledAt,
       consultationType,
+      consultationRoomId,
       status: "pending",
       notes: notes || "",
     });
 
+    // Fetch user and doctor data for email if online
+    if (consultationType === "Online") {
+      const user = await User.findById(userId);
+      const doctor = await Doctor.findById(doctorId);
 
+      console.log("User email:", user?.email);
+      console.log("Doctor email:", doctor?.email);
+
+      if (user?.email && doctor?.email) {
+        const roomLink = `http://localhost:3000/consultation/room/${consultationRoomId}`;
+
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+
+        const sendMailTo = async (recipient) => {
+          const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: recipient,
+            subject: "Online Consultation Scheduled",
+            html: `
+              <h3>Your Online Consultation is Confirmed</h3>
+              <p><strong>Date:</strong> ${new Date(scheduledAt).toLocaleDateString()}</p>
+              <p><strong>Time:</strong> ${new Date(scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              <p><strong>Join Link:</strong> <a href="${roomLink}">${roomLink}</a></p>
+            `,
+          };
+          await transporter.sendMail(mailOptions);
+        };
+        await sendMailTo(user.email);
+        await sendMailTo(doctor.email);
+      }
+    }
+
+    
     const savedAppointment = await newAppointment.save();
     res.status(201).json(savedAppointment);
   } catch (error) {
@@ -122,21 +166,27 @@ const updateAppointmentStatus = async (req, res) => {
   }
 
   try {
-    const appointment = await Appointment.findById(appointmentId);
+    //  Update status and return populated appointment
+    const appointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { status },
+      { new: true } 
+    ).populate("doctorId", "name specialization");
 
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found." });
     }
 
-    appointment.status = status;
-    await appointment.save();
-
-    res.status(200).json({ message: "Appointment status updated successfully.", appointment });
+    res.status(200).json({
+      message: "Appointment status updated successfully.",
+      appointment,
+    });
   } catch (error) {
     console.error("Error updating appointment status:", error);
     res.status(500).json({ message: "Server error while updating appointment status." });
   }
 };
+
 
 // Get today's appointments for a doctor
 const getTodaysAppointmentsByDoctorId = async (req, res) => {
@@ -149,8 +199,6 @@ const getTodaysAppointmentsByDoctorId = async (req, res) => {
     const now = new Date();
     const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
     const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
-
-    // Debug log for query
     console.log('Querying appointments with:', {
       doctorId: doctorId.toString(),
       scheduledAt: { $gte: start.toISOString(), $lte: end.toISOString() }
@@ -161,8 +209,6 @@ const getTodaysAppointmentsByDoctorId = async (req, res) => {
       scheduledAt: { $gte: start, $lte: end }
     })
       .populate("userId", "name email");
-
-    // Debug log for found appointments
     console.log('Appointments found:', appointments);
 
     res.status(200).json(appointments);
