@@ -9,7 +9,7 @@ const User = require("../models/user");
 const createAppointment = async (req, res) => {
   try {
     const { userId, doctorId, scheduledAt, consultationType, notes } = req.body;
-
+    
     // Validate ObjectIds
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid userId" });
@@ -81,6 +81,25 @@ const createAppointment = async (req, res) => {
 
     
     const savedAppointment = await newAppointment.save();
+    // Get patient and doctor info for email
+const patient = await mongoose.model("User").findById(userId); // or require User model if available
+const doctor = await Doctor.findById(doctorId);
+
+  // 👇 Generate Jitsi Meet video link if Online consultation
+    let videoLink = null;
+    if (consultationType === "Online") {
+      const roomName = `HealthCure_${userId}_${doctorId}_${Date.now()}`;
+      videoLink = `https://meet.jit.si/${roomName}`;
+    }
+
+// Send confirmation email
+await sendBookingEmail(patient.email,
+      patient.name,
+      doctor.name,
+      scheduledAt,
+      consultationType,
+      videoLink );
+
     res.status(201).json(savedAppointment);
   } catch (error) {
     console.error("Error creating appointment:", error);
@@ -88,6 +107,43 @@ const createAppointment = async (req, res) => {
   }
 };
 
+// Email transporter setup
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    
+    user: "healthcure365@gmail.com",
+    pass: "kqdf krbs tawqgwah"
+  }
+});
+
+const sendBookingEmail = async (email, patientName, doctorName, scheduledAt, consultationType, videoLink) => {
+  const formattedDate = new Date(scheduledAt).toLocaleDateString();
+  const formattedTime = new Date(scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  let message = `Hi ${patientName},\n\nYour appointment with Dr. ${doctorName} is confirmed for ${formattedDate} at ${formattedTime}.`;
+
+  // If consultation type is Online, add video link
+  if (consultationType === "Online" && videoLink) {
+    message += `\n\n🧑‍⚕️ Video Consultation Link:\n${videoLink}\n(Please join at your scheduled time.)`;
+  }
+
+  message += `\n\nThank you for using HealthCure.`;
+
+  const mailOptions = {
+    from: "healthcure365@gmail.com",
+    to: email,
+    subject: "Appointment Confirmation - HealthCure",
+    text: message
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("📧 Email sent to:", email);
+  } catch (error) {
+    console.error("❌ Email sending failed:", error);
+  }
+};
 
 
 // Get all appointments 
@@ -227,3 +283,4 @@ module.exports = {
   updateAppointmentStatus,
   getTodaysAppointmentsByDoctorId,
 };
+
