@@ -5,6 +5,9 @@ const nodemailer = require("nodemailer");
 const User = require("../models/user"); // adjust path based on your structure
 
 
+
+
+
 const createAppointment = async (req, res) => {
   try {
     const { userId, doctorId, scheduledAt, consultationType, notes } = req.body;
@@ -217,7 +220,7 @@ const getTodaysAppointmentsByDoctorId = async (req, res) => {
       doctorId,
       scheduledAt: { $gte: start, $lte: end }
     })
-    .populate("userId", "name email");
+      .populate("userId", "name email");
 
     // Debug log for found appointments
     console.log('Appointments found:', appointments);

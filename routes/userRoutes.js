@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {loginUser, getAllUsers, getUserById, registerUser} = require("../controllers/userController");
+const { loginUser, getAllUsers, getUserById, registerUser } = require("../controllers/userController");
 
 console.log("User routes loaded");
 
