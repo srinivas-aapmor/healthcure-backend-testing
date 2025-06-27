@@ -100,9 +100,8 @@ const getAllDoctors = async (req, res) => {
     fee: doc.fee,
     bio: doc.bio,
     phone: doc.phone,
-    image: doc.image?.data
-      ? `data:${doc.image.contentType};base64,${doc.image.data.toString('base64')}`
-      : null,
+   hasImage: !!(doc.img && doc.img.data),
+
   }));
 
   res.json(formattedDoctors);
