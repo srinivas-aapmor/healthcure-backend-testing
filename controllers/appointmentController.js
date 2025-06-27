@@ -20,7 +20,7 @@ const sendBookingEmail = async (email, patientName, doctorName, scheduledAt, con
   const formattedTime = new Date(scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   let message = `Hi ${patientName},\n\nYour appointment with Dr. ${doctorName} is confirmed for ${formattedDate} at ${formattedTime}.`;
-const User = require("../models/user");
+
   if (consultationType === "Online" && videoLink) {
     message += `\n\nVideo Consultation Link:\n${videoLink}\n(Please join at your scheduled time.)`;
   }
