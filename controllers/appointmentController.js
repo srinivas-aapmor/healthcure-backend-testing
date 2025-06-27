@@ -1,7 +1,9 @@
 const Appointment = require("../models/appointment");
 const mongoose = require("mongoose");
-const Doctor = require("../models/doctor"); // Register Doctor model for population
+const Doctor = require("../models/doctor");
+const { v4: uuidv4 } = require('uuid');
 const nodemailer = require("nodemailer");
+<<<<<<< HEAD
 const User = require("../models/user"); // adjust path based on your structure
 
 // Email transporter setup
@@ -19,6 +21,9 @@ const sendBookingEmail = async (email, patientName, doctorName, scheduledAt, con
   const formattedTime = new Date(scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   let message = `Hi ${patientName},\n\nYour appointment with Dr. ${doctorName} is confirmed for ${formattedDate} at ${formattedTime}.`;
+=======
+const User = require("../models/user");
+>>>>>>> 451240712beab4f24bba1f81225a5e6d27cb9205
 
   if (consultationType === "Online" && videoLink) {
     message += `\n\nVideo Consultation Link:\n${videoLink}\n(Please join at your scheduled time.)`;
@@ -92,15 +97,61 @@ const createAppointment = async (req, res) => {
       return res.status(400).json({ message: "Invalid scheduledAt date" });
     }
 
+    // Generate room ID for online consultation
+    const consultationRoomId = consultationType === "Online" ? uuidv4() : null;
+
     const newAppointment = new Appointment({
       userId,
       doctorId,
       scheduledAt,
       consultationType,
+      consultationRoomId,
       status: "pending",
       notes: notes || "",
     });
 
+<<<<<<< HEAD
+=======
+    // Fetch user and doctor data for email if online
+    if (consultationType === "Online") {
+      const user = await User.findById(userId);
+      const doctor = await Doctor.findById(doctorId);
+
+      console.log("User email:", user?.email);
+      console.log("Doctor email:", doctor?.email);
+
+      if (user?.email && doctor?.email) {
+        const roomLink = `http://localhost:3000/consultation/room/${consultationRoomId}`;
+
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+
+        const sendMailTo = async (recipient) => {
+          const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: recipient,
+            subject: "Online Consultation Scheduled",
+            html: `
+              <h3>Your Online Consultation is Confirmed</h3>
+              <p><strong>Date:</strong> ${new Date(scheduledAt).toLocaleDateString()}</p>
+              <p><strong>Time:</strong> ${new Date(scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              <p><strong>Join Link:</strong> <a href="${roomLink}">${roomLink}</a></p>
+            `,
+          };
+          await transporter.sendMail(mailOptions);
+        };
+        await sendMailTo(user.email);
+        await sendMailTo(doctor.email);
+      }
+    }
+
+    
+>>>>>>> 451240712beab4f24bba1f81225a5e6d27cb9205
     const savedAppointment = await newAppointment.save();
 
   const patient = await mongoose.model("User").findById(userId);
@@ -209,21 +260,27 @@ const updateAppointmentStatus = async (req, res) => {
   }
 
   try {
-    const appointment = await Appointment.findById(appointmentId);
+    //  Update status and return populated appointment
+    const appointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { status },
+      { new: true } 
+    ).populate("doctorId", "name specialization");
 
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found." });
     }
 
-    appointment.status = status;
-    await appointment.save();
-
-    res.status(200).json({ message: "Appointment status updated successfully.", appointment });
+    res.status(200).json({
+      message: "Appointment status updated successfully.",
+      appointment,
+    });
   } catch (error) {
     console.error("Error updating appointment status:", error);
     res.status(500).json({ message: "Server error while updating appointment status." });
   }
 };
+
 
 // Get today's appointments for a doctor
 const getTodaysAppointmentsByDoctorId = async (req, res) => {
@@ -236,8 +293,6 @@ const getTodaysAppointmentsByDoctorId = async (req, res) => {
     const now = new Date();
     const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
     const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
-
-    // Debug log for query
     console.log('Querying appointments with:', {
       doctorId: doctorId.toString(),
       scheduledAt: { $gte: start.toISOString(), $lte: end.toISOString() }
@@ -248,8 +303,6 @@ const getTodaysAppointmentsByDoctorId = async (req, res) => {
       scheduledAt: { $gte: start, $lte: end }
     })
       .populate("userId", "name email");
-
-    // Debug log for found appointments
     console.log('Appointments found:', appointments);
 
     res.status(200).json(appointments);
