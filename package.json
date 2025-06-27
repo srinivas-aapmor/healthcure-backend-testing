@@ -1,14 +1,15 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
@@ -20,12 +21,10 @@
     "mongoose": "^8.16.0",
     "multer": "^2.0.1",
     "nodemailer": "^7.0.3",
-<<<<<<< HEAD
-    "nodemon": "^3.1.10"
-=======
-    "nodemon": "^3.1.10",
     "uuid": "^11.1.0",
     "ws": "^8.18.2"
->>>>>>> 451240712beab4f24bba1f81225a5e6d27cb9205
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }

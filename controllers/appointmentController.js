@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const Doctor = require("../models/doctor");
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require("nodemailer");
-<<<<<<< HEAD
 const User = require("../models/user"); // adjust path based on your structure
 
 // Email transporter setup
@@ -21,16 +20,11 @@ const sendBookingEmail = async (email, patientName, doctorName, scheduledAt, con
   const formattedTime = new Date(scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   let message = `Hi ${patientName},\n\nYour appointment with Dr. ${doctorName} is confirmed for ${formattedDate} at ${formattedTime}.`;
-=======
 const User = require("../models/user");
->>>>>>> 451240712beab4f24bba1f81225a5e6d27cb9205
-
   if (consultationType === "Online" && videoLink) {
     message += `\n\nVideo Consultation Link:\n${videoLink}\n(Please join at your scheduled time.)`;
   }
-
   message += `\n\nThank you for using HealthCure.`;
-
   const mailOptions = {
     from: "healthcure365@gmail.com",
     to: email,
@@ -110,8 +104,6 @@ const createAppointment = async (req, res) => {
       notes: notes || "",
     });
 
-<<<<<<< HEAD
-=======
     // Fetch user and doctor data for email if online
     if (consultationType === "Online") {
       const user = await User.findById(userId);
@@ -149,9 +141,6 @@ const createAppointment = async (req, res) => {
         await sendMailTo(doctor.email);
       }
     }
-
-    
->>>>>>> 451240712beab4f24bba1f81225a5e6d27cb9205
     const savedAppointment = await newAppointment.save();
 
   const patient = await mongoose.model("User").findById(userId);
