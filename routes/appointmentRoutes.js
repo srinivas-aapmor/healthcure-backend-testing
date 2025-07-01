@@ -9,15 +9,18 @@ const { getAppointmentsByUserId } = require("../controllers/appointmentControlle
 const { getAppointmentsByDoctorId } = require("../controllers/appointmentController");
 const { getTodaysAppointmentsByDoctorId } = require("../controllers/appointmentController");
 const { updateAppointmentStatus } = require("../controllers/appointmentController");
-
+const { getBookedSlotsByDoctorAndDate } = require("../controllers/appointmentController");
 
 router.post("/book", createAppointment);
 router.get("/", getAllAppointments);
+router.get("/booked-slots", getBookedSlotsByDoctorAndDate);
+
 router.get("/user/:userId", getAppointmentsByUserId);
 router.get("/doctor/today/:doctorId", getTodaysAppointmentsByDoctorId);
 router.get("/doctor/:doctorId", getAppointmentsByDoctorId);
 router.patch("/status/:appointmentId", updateAppointmentStatus);
 router.get("/:id", getAppointmentById);
+
 
 
 module.exports = router;
