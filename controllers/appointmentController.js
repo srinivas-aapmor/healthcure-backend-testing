@@ -21,14 +21,10 @@ const sendBookingEmail = async (email, patientName, doctorName, scheduledAt, con
 
   let message = `Hi ${patientName},\n\nYour appointment with Dr. ${doctorName} is confirmed for ${formattedDate} at ${formattedTime}.`;
 
-const User = require("../models/user");
-
   if (consultationType === "Online" && videoLink) {
     message += `\n\nVideo Consultation Link:\n${videoLink}\n(Please join at your scheduled time.)`;
   }
-
   message += `\n\nThank you for using HealthCure.`;
-
   const mailOptions = {
     from: "healthcure365@gmail.com",
     to: email,
@@ -145,9 +141,6 @@ const createAppointment = async (req, res) => {
         await sendMailTo(doctor.email);
       }
     }
-
-    
-
     const savedAppointment = await newAppointment.save();
 
   const patient = await mongoose.model("User").findById(userId);
