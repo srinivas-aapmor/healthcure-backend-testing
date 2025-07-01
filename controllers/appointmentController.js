@@ -223,6 +223,8 @@ const getAppointmentsByUserId = async (req, res) => {
     }
     const appointments = await Appointment.find({ userId })
       .populate("doctorId", "name specialization");
+      console.log("Populated appointments:", appointments);
+
     res.status(200).json(appointments);
   } catch (error) {
     console.error("Error fetching user appointments for userId:", req.params.userId, error.stack);
@@ -308,6 +310,42 @@ const getTodaysAppointmentsByDoctorId = async (req, res) => {
   }
 };
 
+const getBookedSlotsByDoctorAndDate = async (req, res) => {
+  try {
+    const { doctorId, date } = req.query;
+
+    if (!doctorId || !date) {
+      return res.status(400).json({ message: "Missing doctorId or date" });
+    }
+
+    const start = new Date(`${date}T00:00:00.000Z`);
+    const end = new Date(`${date}T23:59:59.999Z`);
+
+    const appointments = await Appointment.find({
+      doctorId,
+      scheduledAt: { $gte: start, $lte: end },
+      status: { $ne: "cancelled" } // exclude cancelled ones
+    });
+
+    const bookedSlots = appointments.map((appt) => {
+      const start = new Date(appt.scheduledAt);
+      const endTime = new Date(start.getTime() + 30 * 60000); // assuming 30min slots
+
+      const startStr = start.toTimeString().slice(0, 5);
+      const endStr = endTime.toTimeString().slice(0, 5);
+
+      return `${startStr}-${endStr}`;
+    });
+
+    res.status(200).json({ bookedSlots });
+  } catch (error) {
+    console.error("Error fetching booked slots:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+
 module.exports = {
   createAppointment,
   getAllAppointments,
@@ -316,5 +354,6 @@ module.exports = {
   getAppointmentsByDoctorId,
   updateAppointmentStatus,
   getTodaysAppointmentsByDoctorId,
+  getBookedSlotsByDoctorAndDate,
 };
 
