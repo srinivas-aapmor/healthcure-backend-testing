@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
-    match: /^[6-9]\d{9}$/ // for Indian numbers
+    match: /^[6-9]\d{9}$/ 
   },
   createdAt: {
     type: Date,

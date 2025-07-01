@@ -18,7 +18,7 @@ const createOrUpdateProfile = async (req, res) => {
     from,
     to,
     bio,
-    image // image is optional
+    image 
   } = req.body;
 
   const imgData = req.file
@@ -28,10 +28,9 @@ const createOrUpdateProfile = async (req, res) => {
     }
     : undefined;
 
-  // To find doctor by email 
+  
   let profile = await Doctor.findOne({ email });
   if (profile) {
-    //To update password 
     if (password && password.trim() !== "") {
       profile.password = await bcrypt.hash(password, 10);
     }

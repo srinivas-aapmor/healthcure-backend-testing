@@ -13,9 +13,9 @@ const verifyToken = async (req, res, next) => {
     const token = authHeader.split(" ")[1]; 
     const decoded = jwt.verify(token, process.env.JWT_SECRET); 
 
-    // Try to find user in User collection
+    //find user and check pwd
     let user = await User.findById(decoded.id).select("-password");
-    // If not found, try Doctor collection
+   
     if (!user) {
       user = await Doctor.findById(decoded.id).select("-password");
     }

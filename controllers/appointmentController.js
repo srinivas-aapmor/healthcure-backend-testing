@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const Doctor = require("../models/doctor");
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require("nodemailer");
-const User = require("../models/user"); // adjust path based on your structure
+const User = require("../models/user"); 
 
 // Email transporter setup
 const transporter = nodemailer.createTransport({
@@ -81,12 +81,10 @@ const createAppointment = async (req, res) => {
       return res.status(400).json({ message: "Invalid doctorId" });
     }
 
-    // Validate consultationType
-    if (!["Online", "In-Person"].includes(consultationType)) {
+       if (!["Online", "In-Person"].includes(consultationType)) {
       return res.status(400).json({ message: "Invalid consultationType" });
     }
 
-    // Validate scheduledAt
     if (!scheduledAt || isNaN(new Date(scheduledAt).getTime())) {
       return res.status(400).json({ message: "Invalid scheduledAt date" });
     }
@@ -146,7 +144,7 @@ const createAppointment = async (req, res) => {
   const patient = await mongoose.model("User").findById(userId);
     const doctor = await Doctor.findById(doctorId);
 
-    // Step 4: Generate Jitsi links
+    //  Generate Jitsi links
     let videoLink = null;
     let patientVideoLink = null;
     let doctorVideoLink = null;
@@ -161,7 +159,7 @@ const createAppointment = async (req, res) => {
 
     }
 
-    // Step 5: Send email & SMS
+    // Send email & SMS
     await sendBookingEmail(patient.email, patient.name, doctor.name, scheduledAt, consultationType, patientVideoLink);
     await sendBookingEmailToDoctor(doctor.email, doctor.name, patient.name, scheduledAt, consultationType, doctorVideoLink);
 
@@ -317,12 +315,12 @@ const getBookedSlotsByDoctorAndDate = async (req, res) => {
     const appointments = await Appointment.find({
       doctorId,
       scheduledAt: { $gte: start, $lte: end },
-      status: { $ne: "cancelled" } // exclude cancelled ones
+      status: { $ne: "cancelled" } 
     });
 
     const bookedSlots = appointments.map((appt) => {
       const start = new Date(appt.scheduledAt);
-      const endTime = new Date(start.getTime() + 30 * 60000); // assuming 30min slots
+      const endTime = new Date(start.getTime() + 30 * 60000); 
 
       const startStr = start.toTimeString().slice(0, 5);
       const endStr = endTime.toTimeString().slice(0, 5);
