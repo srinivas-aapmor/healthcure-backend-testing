@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const Doctor = require("../models/doctor");
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require("nodemailer");
-const User = require("../models/user"); 
+const User = require("../models/user");
 
 // Email transporter setup
 const transporter = nodemailer.createTransport({
@@ -81,7 +81,7 @@ const createAppointment = async (req, res) => {
       return res.status(400).json({ message: "Invalid doctorId" });
     }
 
-       if (!["Online", "In-Person"].includes(consultationType)) {
+    if (!["Online", "In-Person"].includes(consultationType)) {
       return res.status(400).json({ message: "Invalid consultationType" });
     }
 
@@ -133,7 +133,7 @@ const createAppointment = async (req, res) => {
     }
     const savedAppointment = await newAppointment.save();
 
-  const patient = await mongoose.model("User").findById(userId);
+    const patient = await mongoose.model("User").findById(userId);
     const doctor = await Doctor.findById(doctorId);
 
     //  Generate Jitsi links
@@ -206,7 +206,7 @@ const getAppointmentsByUserId = async (req, res) => {
     }
     const appointments = await Appointment.find({ userId })
       .populate("doctorId", "name specialization");
-      console.log("Populated appointments:", appointments);
+    console.log("Populated appointments:", appointments);
 
     res.status(200).json(appointments);
   } catch (error) {
@@ -343,7 +343,7 @@ const getBookedSlotsByDoctorAndDate = async (req, res) => {
     });
 
     const formatTime = (date) => {
-      return date.toTimeString().slice(0, 5); 
+      return date.toTimeString().slice(0, 5);
     };
 
     const bookedSlots = appointments.map((appt) => {
