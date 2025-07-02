@@ -239,7 +239,6 @@ const updateAppointmentStatus = async (req, res) => {
   }
 
   try {
-    // First: find the appointment and populate related data
     const appointment = await Appointment.findById(appointmentId)
       .populate("doctorId", "name email")
       .populate("userId", "name email");
@@ -248,54 +247,40 @@ const updateAppointmentStatus = async (req, res) => {
       return res.status(404).json({ message: "Appointment not found." });
     }
 
-    // Check time BEFORE saving
     if (status === "cancelled") {
       const now = new Date();
       const scheduledAt = new Date(appointment.scheduledAt);
-      const diffMs = scheduledAt - now;
-      const diffHours = diffMs / (1000 * 60 * 60);
+      const diffHours = (scheduledAt - now) / (1000 * 60 * 60);
 
       if (diffHours < 1) {
         return res.status(400).json({
           message: "Cannot cancel appointment less than 1 hour before the scheduled time."
         });
       }
+
+      appointment.status = "cancelled";
+      appointment.cancellationReason = reason || "No reason provided";
+      await appointment.save();
+
+      // Send to Doctor
+      await transporter.sendMail({
+        from: "healthcure365@gmail.com",
+        to: appointment.doctorId.email,
+        subject: "Patient Appointment Cancelled - HealthCure",
+        text: `Dear Dr. ${appointment.doctorId.name},\n\nYour patient ${appointment.userId.name} has cancelled their appointment scheduled for ${scheduledAt.toLocaleString()}.\n\nReason: ${appointment.cancellationReason}\n\n- HealthCure Team`
+      });
+
+      // Send to Patient
+      await transporter.sendMail({
+        from: "healthcure365@gmail.com",
+        to: appointment.userId.email,
+        subject: "Appointment Cancelled - HealthCure",
+        text: `Dear ${appointment.userId.name},\n\nYour appointment with Dr. ${appointment.doctorId.name} has been successfully cancelled.\n\nReason: ${appointment.cancellationReason}\n\n- HealthCure Team`
+      });
+    } else {
+      appointment.status = status;
+      await appointment.save();
     }
-
-    // Now safe to update
-    appointment.status = status;
-    await appointment.save();
-
-    // Send email to patient
-if (status === "cancelled" && appointment.userId?.email) {
-  const patientMailOptions = {
-    from: "healthcure365@gmail.com",
-    to: appointment.userId.email,
-    subject: "Appointment Cancelled - HealthCure",
-    text: `Dear ${appointment.userId.name},\n\nWe regret to inform you that your appointment with Dr. ${appointment.doctorId.name} has been cancelled.
-    Reason: ${reason || "No specific reason provided."}
-    \n\nYou can book a new appointment at your convenience.\n\nRegards,\nHealthCure Team`
-  };
-
-  await transporter.sendMail(patientMailOptions);
-  console.log("Cancellation email sent to patient:", appointment.userId.email);
-}
-
-//Send email to doctor
-if (status === "cancelled" && appointment.doctorId?.email) {
-  const doctorMailOptions = {
-    from: "healthcure365@gmail.com",
-    to: appointment.doctorId.email,
-    subject: "Patient Appointment Cancelled",
-    text: `Dear Dr. ${appointment.doctorId.name},\n\nYour patient ${appointment.userId.name} has cancelled their appointment scheduled for ${new Date(appointment.scheduledAt).toLocaleString()}.
-    Reason for cancellation: ${reason || "No reason provided."}
-    \n\nRegards,\nHealthCure Team`
-  };
-
-  await transporter.sendMail(doctorMailOptions);
-  console.log("Cancellation email sent to doctor:", appointment.doctorId.email);
-}
-
 
     res.status(200).json({
       message: "Appointment status updated successfully.",
@@ -306,6 +291,7 @@ if (status === "cancelled" && appointment.doctorId?.email) {
     res.status(500).json({ message: "Server error while updating appointment status." });
   }
 };
+
 
 
 
@@ -373,54 +359,73 @@ const getBookedSlotsByDoctorAndDate = async (req, res) => {
   }
 };
 
-// //reason for cancel
-// const cancelAppointmentWithReason= async(req,res)=>{
-// try{
-//   const {appointmentId}=req.params;
-//   const {reason}=req.body;
+// reason for cancel by doctor
+const cancelAppointmentByDoctor = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { reason } = req.body;
 
-//   const appointment=await Appointment.findById(appointmentId)
-//   .populate("doctorId")
-//   .populate("userId");
+    const appointment = await Appointment.findById(appointmentId)
+      .populate("doctorId", "name email")
+      .populate("userId", "name email");
 
-//   if(!appointment){
-//     res.status(404).json("Appointment cancelled");
-//   }
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
 
-//   appointment.status="cancelled";
-//   appointment.cancellationReason = reason||"No reason Provided"
+    const now = new Date();
+    const scheduledTime = new Date(appointment.scheduledAt);
+    const diffInMinutes = (scheduledTime - now) / (1000 * 60);
+    if (diffInMinutes < 60) {
+      return res.status(400).json({
+        message: "Cannot cancel appointment less than 1 hour before scheduled time.",
+      });
+    }
 
-//   await appointment.save();
+    appointment.status = "cancelled";
+    appointment.cancellationReason = reason || "No reason provided";
+    await appointment.save();
 
+    const formattedDate = scheduledTime.toLocaleString();
 
-//    const formattedDate = new Date(appointment.scheduledAt).toLocaleString();
+    const htmlContent = `
+      <h3>Appointment Cancelled</h3>
+      <p><strong>Doctor:</strong> Dr. ${appointment.doctorId.name}</p>
+      <p><strong>Patient:</strong> ${appointment.userId.name}</p>
+      <p><strong>Date & Time:</strong> ${formattedDate}</p>
+      <p><strong>Reason:</strong> ${appointment.cancellationReason}</p>
+      <p><strong>Status:</strong> Cancelled</p>
+    `;
 
-//     const mailOptions = {
-//       from: "healthcure365@gmail.com",
-//       to: `${appointment.userId.email}, ${appointment.doctorId.email}`,
-//       subject: "Appointment Cancelled",
-//       html: `
-//         <h2>Appointment Cancelled</h2>
-//         <p><strong>Patient:</strong> ${appointment.userId.name}</p>
-//         <p><strong>Doctor:</strong> Dr. ${appointment.doctorId.name}</p>
-//         <p><strong>Date & Time:</strong> ${formattedDate}</p>
-//         <p><strong>Reason:</strong> ${appointment.cancellationReason}</p>
-//         <p>Status: Cancelled</p>
-//       `,
-//     };
+    // Send to patient
+    await transporter.sendMail({
+      from: "healthcure365@gmail.com",
+      to: appointment.userId.email,
+      subject: "Appointment Cancelled by Doctor - HealthCure",
+      html: htmlContent,
+    });
 
-//     await transporter.sendMail(mailOptions);
+    // Send to doctor
+    await transporter.sendMail({
+      from: "healthcure365@gmail.com",
+      to: appointment.doctorId.email,
+      subject: "You Cancelled an Appointment - HealthCure",
+      html: htmlContent,
+    });
 
-//     res.status(200).json({
-//       message: "Appointment cancelled and email sent.",
-//       appointment,
-//     });
-//   } catch (error) {
-//     console.error("Error cancelling appointment:", error);
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
+    res.status(200).json({
+      message: "Appointment cancelled by doctor and emails sent.",
+      appointment,
+    });
+  } catch (error) {
+    console.error("Error cancelling appointment by doctor:", error);
+    res.status(500).json({
+      message: "Server error while cancelling appointment by doctor.",
+      error: error.message,
+    });
+  }
+};
 
-// };
 
 module.exports = {
   createAppointment,
@@ -431,6 +436,6 @@ module.exports = {
   updateAppointmentStatus,
   getTodaysAppointmentsByDoctorId,
   getBookedSlotsByDoctorAndDate,
-  // cancelAppointmentWithReason
+  cancelAppointmentByDoctor
 };
 

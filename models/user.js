@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: true,
+    // required: true,
     match: /^[6-9]\d{9}$/ 
   },
   createdAt: {

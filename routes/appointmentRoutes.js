@@ -10,7 +10,7 @@ const { getAppointmentsByDoctorId } = require("../controllers/appointmentControl
 const { getTodaysAppointmentsByDoctorId } = require("../controllers/appointmentController");
 const { updateAppointmentStatus } = require("../controllers/appointmentController");
 const { getBookedSlotsByDoctorAndDate } = require("../controllers/appointmentController");
-// const { cancelAppointmentWithReason }  = require("../controllers/appointmentController");
+const { cancelAppointmentByDoctor }  = require("../controllers/appointmentController");
 
 router.post("/book", createAppointment);
 router.get("/", getAllAppointments);
@@ -21,6 +21,7 @@ router.get("/doctor/today/:doctorId", getTodaysAppointmentsByDoctorId);
 router.get("/doctor/:doctorId", getAppointmentsByDoctorId);
 router.patch("/status/:appointmentId", updateAppointmentStatus);
 router.get("/:id", getAppointmentById);
-// router.patch("/cancel/:appointmentId", cancelAppointmentWithReason  );
+router.patch("/appointments/:appointmentId/status", updateAppointmentStatus);
+router.patch("/:appointmentId/cancel-by-doctor", cancelAppointmentByDoctor);
 
 module.exports = router;
