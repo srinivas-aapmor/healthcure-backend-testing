@@ -74,7 +74,11 @@ const getUserById = async (req, res) => {
 };
 
 const registerUser = async (req, res) => {
+<<<<<<< HEAD
   const { name, email, password } = req.body;
+=======
+  const { name, email, password,  } = req.body;
+>>>>>>> 22d2280ceabdfbf08549deb61b5f1be233475f51
   if (!name || !email || !password) {
     return res.status(400).json({ message: "Please provide name, email, and password" });
   }
