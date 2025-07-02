@@ -74,7 +74,7 @@ const getUserById = async (req, res) => {
 };
 
 const registerUser = async (req, res) => {
-  const { name, email, password, phone } = req.body;
+  const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ message: "Please provide name, email, and password" });
   }
@@ -83,7 +83,7 @@ const registerUser = async (req, res) => {
     if (existingUser) {
       return res.status(409).json({ message: "User already exists" });
     }
-    const user = new User({ name, email, password, phone, role: "patient" });
+    const user = new User({ name, email, password, role: "patient" });
     await user.save();
     const token = generateToken(user._id);
     res.status(201).json({
