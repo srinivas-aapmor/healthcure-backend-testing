@@ -231,7 +231,7 @@ const getAppointmentsByDoctorId = async (req, res) => {
 
 const updateAppointmentStatus = async (req, res) => {
   const { appointmentId } = req.params;
-  const { status } = req.body;
+  const { status, reason } = req.body;
 
   const validStatuses = ["pending", "confirmed", "cancelled", "completed"];
   if (!validStatuses.includes(status)) {
@@ -272,7 +272,9 @@ if (status === "cancelled" && appointment.userId?.email) {
     from: "healthcure365@gmail.com",
     to: appointment.userId.email,
     subject: "Appointment Cancelled - HealthCure",
-    text: `Dear ${appointment.userId.name},\n\nWe regret to inform you that your appointment with Dr. ${appointment.doctorId.name} has been cancelled.\n\nYou can book a new appointment at your convenience.\n\nRegards,\nHealthCure Team`
+    text: `Dear ${appointment.userId.name},\n\nWe regret to inform you that your appointment with Dr. ${appointment.doctorId.name} has been cancelled.
+    Reason: ${reason || "No specific reason provided."}
+    \n\nYou can book a new appointment at your convenience.\n\nRegards,\nHealthCure Team`
   };
 
   await transporter.sendMail(patientMailOptions);
@@ -285,7 +287,9 @@ if (status === "cancelled" && appointment.doctorId?.email) {
     from: "healthcure365@gmail.com",
     to: appointment.doctorId.email,
     subject: "Patient Appointment Cancelled",
-    text: `Dear Dr. ${appointment.doctorId.name},\n\nYour patient ${appointment.userId.name} has cancelled their appointment scheduled for ${new Date(appointment.scheduledAt).toLocaleString()}.\n\nRegards,\nHealthCure Team`
+    text: `Dear Dr. ${appointment.doctorId.name},\n\nYour patient ${appointment.userId.name} has cancelled their appointment scheduled for ${new Date(appointment.scheduledAt).toLocaleString()}.
+    Reason for cancellation: ${reason || "No reason provided."}
+    \n\nRegards,\nHealthCure Team`
   };
 
   await transporter.sendMail(doctorMailOptions);
