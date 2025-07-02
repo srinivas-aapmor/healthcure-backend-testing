@@ -315,17 +315,17 @@ const getBookedSlotsByDoctorAndDate = async (req, res) => {
     const appointments = await Appointment.find({
       doctorId,
       scheduledAt: { $gte: start, $lte: end },
-      status: { $ne: "cancelled" } 
+      status: { $ne: "cancelled" }
     });
 
+    const formatTime = (date) => {
+      return date.toTimeString().slice(0, 5); 
+    };
+
     const bookedSlots = appointments.map((appt) => {
-      const start = new Date(appt.scheduledAt);
-      const endTime = new Date(start.getTime() + 30 * 60000); 
-
-      const startStr = start.toTimeString().slice(0, 5);
-      const endStr = endTime.toTimeString().slice(0, 5);
-
-      return `${startStr}-${endStr}`;
+      const startTime = new Date(appt.scheduledAt);
+      const endTime = new Date(startTime.getTime() + 15 * 60000);
+      return `${formatTime(startTime)}-${formatTime(endTime)}`;
     });
 
     res.status(200).json({ bookedSlots });
@@ -335,7 +335,54 @@ const getBookedSlotsByDoctorAndDate = async (req, res) => {
   }
 };
 
+// //reason for cancel
+// const cancelAppointmentWithReason= async(req,res)=>{
+// try{
+//   const {appointmentId}=req.params;
+//   const {reason}=req.body;
 
+//   const appointment=await Appointment.findById(appointmentId)
+//   .populate("doctorId")
+//   .populate("userId");
+
+//   if(!appointment){
+//     res.status(404).json("Appointment cancelled");
+//   }
+
+//   appointment.status="cancelled";
+//   appointment.cancellationReason = reason||"No reason Provided"
+
+//   await appointment.save();
+
+
+//    const formattedDate = new Date(appointment.scheduledAt).toLocaleString();
+
+//     const mailOptions = {
+//       from: "healthcure365@gmail.com",
+//       to: `${appointment.userId.email}, ${appointment.doctorId.email}`,
+//       subject: "Appointment Cancelled",
+//       html: `
+//         <h2>Appointment Cancelled</h2>
+//         <p><strong>Patient:</strong> ${appointment.userId.name}</p>
+//         <p><strong>Doctor:</strong> Dr. ${appointment.doctorId.name}</p>
+//         <p><strong>Date & Time:</strong> ${formattedDate}</p>
+//         <p><strong>Reason:</strong> ${appointment.cancellationReason}</p>
+//         <p>Status: Cancelled</p>
+//       `,
+//     };
+
+//     await transporter.sendMail(mailOptions);
+
+//     res.status(200).json({
+//       message: "Appointment cancelled and email sent.",
+//       appointment,
+//     });
+//   } catch (error) {
+//     console.error("Error cancelling appointment:", error);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+
+// };
 
 module.exports = {
   createAppointment,
@@ -346,5 +393,6 @@ module.exports = {
   updateAppointmentStatus,
   getTodaysAppointmentsByDoctorId,
   getBookedSlotsByDoctorAndDate,
+  // cancelAppointmentWithReason
 };
 
