@@ -155,11 +155,11 @@ const getDoctorAvailability = async (req, res) => {
   }
 };
 
-
 module.exports = {
   createOrUpdateProfile,
   getAllDoctors,
   getDoctorById,
   updateAvailability,
-  getDoctorAvailability
+  getDoctorAvailability,
+  
 }

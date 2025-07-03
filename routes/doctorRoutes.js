@@ -8,6 +8,7 @@ const verifyToken = require("../middleware/authmiddleware");
 const roleCheck = require('../middleware/rolemiddleware');
 const { getDoctorAvailability } = require("../controllers/doctorController");
 
+
 const router = express.Router();
 
 // Memory storage for image upload
@@ -23,6 +24,7 @@ router.get("/:id", verifyToken, getDoctorById);
 router.put("/availability", verifyToken, roleCheck(["doctor"]), updateAvailability);
 router.post("/register", register);
 router.get("/availability/:id", getDoctorAvailability);
+
 
 
 module.exports = router;
