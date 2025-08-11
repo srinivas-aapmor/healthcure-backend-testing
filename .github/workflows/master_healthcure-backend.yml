@@ -52,12 +52,7 @@ jobs:
         uses: azure/appservice-settings@v1
         with:
           app-name: 'healthcure-backend'
-          app-settings-json: |
-            [
-              { "name": "JWT_SECRET", "value": "${{ secrets.JWT_SECRET }}" },
-              { "name": "MONGO_URI",  "value": "${{ secrets.MONGO_URI }}" },
-              { "name": "PORT",       "value": "${{ secrets.PORT }}" }
-            ]
+          app-settings-json: '[{"name":"JWT_SECRET","value":"${{ secrets.JWT_SECRET }}"},{"name":"MONGO_URI","value":"${{ secrets.MONGO_URI }}"},{"name":"PORT","value":"${{ secrets.PORT }}"}]'
 
       - name: Send Teams notification
         if: always()
