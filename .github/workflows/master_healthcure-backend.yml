@@ -40,17 +40,13 @@ jobs:
         with:
           name: node-app
 
-      - name: Deploy to Azure Web App and capture logs
-        id: deploy
-        run: |
-          {
-            echo "=== Azure Deployment Logs ==="
-            npx azure-webapps-deploy \
-              --app-name "healthcure-backend" \
-              --slot-name "Production" \
-              --publish-profile "${{ secrets.AZURE_PUBLISH_PROFILE }}" \
-              --package .
-          } 2>&1 | tee deploy.log
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "healthcure-backend"
+          slot-name: "Production"
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: .
 
       - name: Set Azure App Service app settings (env vars)
         uses: azure/appservice-settings@v1
@@ -63,17 +59,15 @@ jobs:
               { "name": "PORT",       "value": "${{ secrets.PORT }}" }
             ]
 
-      - name: Send Teams notification with logs
+      - name: Send Teams notification
         if: always()
         run: |
-          LOGS=$(cat deploy.log | tail -n 20 | sed 's/"/\\"/g' | sed "s/'/\\'/g")
-          STATUS=" Deployment succeeded"
+          STATUS="Deployment succeeded"
           if [ "${{ job.status }}" != "success" ]; then
             STATUS="Deployment failed"
           fi
           curl -H 'Content-Type: application/json' \
                -d "{
-                    \"text\": \"${STATUS} to Azure Web App *healthcure-backend* by Srinivas Reddy\n\nLast 20 log lines:\n${LOGS}\"
+                    \"text\": \"${STATUS} to Azure Web App *healthcure-backend* by Srinivas Reddy\"
                    }" \
                ${{ secrets.INCOMING_WEBHOOK }}
-
