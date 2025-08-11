@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy Node.js app to Azure Web App - healthcure-backend
 
 on:
@@ -13,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read # Required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -44,8 +41,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-      
-      - name: 'Deploy to Azure Web App'
+
+      # Inject environment variables into Azure App Settings
+      - name: Set Azure App Settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: 'healthcure-backend'
+          app-settings-json: |
+            [
+              { "name": "JWT_SECRET", "value": "${{ secrets.JWT_SECRET }}" },
+              { "name": "MONGO_URI",  "value": "${{ secrets.MONGO_URI }}" },
+              { "name": "PORT",       "value": "${{ secrets.PORT }}" }
+            ]
+
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
@@ -53,3 +62,33 @@ jobs:
           slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4FE7B843C0314AA49975FC2BE13511F4 }}
+
+      #  Send Teams notification on success
+      - name: Send Teams success notification
+        if: success()
+        run: |
+          curl -H 'Content-Type: application/json' \
+          -d '{
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": "Deployment Success",
+            "themeColor": "0078D7",
+            "title": "Deployment Successful",
+            "text": "The Node.js backend **healthcure-backend** was deployed successfully to Azure Web App.\n\nDeployed by **Srinivas Reddy**."
+          }' \
+          ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+      # Send Teams notification on failure
+      - name: Send Teams failure notification
+        if: failure()
+        run: |
+          curl -H 'Content-Type: application/json' \
+          -d '{
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": "Deployment Failed",
+            "themeColor": "FF0000",
+            "title": "Deployment Failed",
+            "text": "The Node.js backend **healthcure-backend** deployment to Azure Web App has failed.\n\nDeployed by **Srinivas Reddy**. Please check the workflow logs for details."
+          }' \
+          ${{ secrets.INCOMING_WEBHOOK }}
