@@ -54,7 +54,7 @@ jobs:
       - name: Send Teams notification
         if: always()
         env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.INCOMING_WEBHOOK }}
+          INCOMING_WEBHOOK: ${{ secrets.INCOMING_WEBHOOK }}
         run: |
           STATUS="Deployment succeeded"
           if [ "${{ job.status }}" != "success" ]; then
@@ -63,3 +63,4 @@ jobs:
           curl -H "Content-Type: application/json" \
                -d "{\"text\": \"${STATUS} to Azure Web App *healthcure-backend* by Srinivas\"}" \
                "$INCOMING_WEBHOOK"
+
