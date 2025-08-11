@@ -9,24 +9,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js version
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
 
-      - name: npm install, build, and test
+      - name: Install, build, and test
         run: |
           npm install
           npm run build --if-present
           npm run test --if-present
 
-      - name: Upload artifact for deployment job
+      - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: node-app
@@ -37,19 +35,24 @@ jobs:
     needs: build
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: node-app
 
-      # 🔹 Azure Login
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy to Azure Web App and capture logs
+        id: deploy
+        run: |
+          {
+            echo "=== Azure Deployment Logs ==="
+            npx azure-webapps-deploy \
+              --app-name "healthcure-backend" \
+              --slot-name "Production" \
+              --publish-profile "${{ secrets.AZURE_PUBLISH_PROFILE }}" \
+              --package .
+          } 2>&1 | tee deploy.log
 
-      # ✅ Inject environment variables into Azure App Settings
-      - name: Set Azure App Settings
+      - name: Set Azure App Service app settings (env vars)
         uses: azure/appservice-settings@v1
         with:
           app-name: 'healthcure-backend'
@@ -60,41 +63,17 @@ jobs:
               { "name": "PORT",       "value": "${{ secrets.PORT }}" }
             ]
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'healthcure-backend'
-          slot-name: 'Production'
-          package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4FE7B843C0314AA49975FC2BE13511F4 }}
-
-      #Send Teams notification on success
-      - name: Send Teams success notification
-        if: success()
+      - name: Send Teams notification with logs
+        if: always()
         run: |
+          LOGS=$(cat deploy.log | tail -n 20 | sed 's/"/\\"/g' | sed "s/'/\\'/g")
+          STATUS=" Deployment succeeded"
+          if [ "${{ job.status }}" != "success" ]; then
+            STATUS="Deployment failed"
+          fi
           curl -H 'Content-Type: application/json' \
-          -d '{
-            "@type": "MessageCard",
-            "@context": "https://schema.org/extensions",
-            "summary": "Deployment Success",
-            "themeColor": "0078D7",
-            "title": "Deployment Successful",
-            "text": "The Node.js backend **healthcure-backend** was deployed successfully to Azure Web App.\n\nDeployed by **Srinivas Reddy**."
-          }' \
-          ${{ secrets.INCOMING_WEBHOOK }}
+               -d "{
+                    \"text\": \"${STATUS} to Azure Web App *healthcure-backend* by Srinivas Reddy\n\nLast 20 log lines:\n${LOGS}\"
+                   }" \
+               ${{ secrets.INCOMING_WEBHOOK }}
 
-      # Send Teams notification on failure
-      - name: Send Teams failure notification
-        if: failure()
-        run: |
-          curl -H 'Content-Type: application/json' \
-          -d '{
-            "@type": "MessageCard",
-            "@context": "https://schema.org/extensions",
-            "summary": "Deployment Failed",
-            "themeColor": "FF0000",
-            "title": "Deployment Failed",
-            "text": "The Node.js backend **healthcure-backend** deployment to Azure Web App has failed.\n\nDeployed by **Srinivas Reddy**. Please check the workflow logs for details."
-          }' \
-          ${{ secrets.INCOMING_WEBHOOK }}
