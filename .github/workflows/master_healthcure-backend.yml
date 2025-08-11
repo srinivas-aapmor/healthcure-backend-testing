@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -35,14 +35,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: node-app
 
-      # Inject environment variables into Azure App Settings
+      # 🔹 Azure Login
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # ✅ Inject environment variables into Azure App Settings
       - name: Set Azure App Settings
         uses: azure/appservice-settings@v1
         with:
@@ -63,7 +69,7 @@ jobs:
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4FE7B843C0314AA49975FC2BE13511F4 }}
 
-      #  Send Teams notification on success
+      #Send Teams notification on success
       - name: Send Teams success notification
         if: success()
         run: |
@@ -76,7 +82,7 @@ jobs:
             "title": "Deployment Successful",
             "text": "The Node.js backend **healthcure-backend** was deployed successfully to Azure Web App.\n\nDeployed by **Srinivas Reddy**."
           }' \
-          ${{ secrets.TEAMS_WEBHOOK_URL }}
+          ${{ secrets.INCOMING_WEBHOOK }}
 
       # Send Teams notification on failure
       - name: Send Teams failure notification
